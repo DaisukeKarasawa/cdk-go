@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -17,7 +18,7 @@ import (
 )
 
 type Post struct {
-	ID      string `json:"id"`
+	ID      int    `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }
@@ -78,8 +79,12 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
 	}
 
 	if method == http.MethodGet && strings.HasPrefix(path, "/posts/") {
-		id := strings.TrimPrefix(path, "/posts/")
-		key := fmt.Sprintf("posts/%s.json", id)
+		idStr := strings.TrimPrefix(path, "/posts/")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			return errorJSON(400, "invalid id: must be a number")
+		}
+		key := fmt.Sprintf("posts/%d.json", id)
 		po, err := s3Client.GetObject(ctx, &s3.GetObjectInput{Bucket: &bucket, Key: &key})
 		if err != nil {
 			return errorJSON(404, "not found")
@@ -92,11 +97,11 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
 
 	if method == http.MethodPost && path == "/posts" {
 		var p Post
-		if err := json.Unmarshal([]byte(req.Body), &p); err != nil || p.ID == "" {
+		if err := json.Unmarshal([]byte(req.Body), &p); err != nil || p.ID == 0 {
 			return errorJSON(400, "invalid body: require id,title,content")
 		}
 
-		key := fmt.Sprintf("posts/%s.json", p.ID)
+		key := fmt.Sprintf("posts/%d.json", p.ID)
 		b, _ := json.Marshal(p)
 		ct := "application/json"
 		_, err := s3Client.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &key, Body: bytes.NewReader(b), ContentType: &ct})
@@ -107,9 +112,13 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
 	}
 
 	if method == http.MethodPut && strings.HasPrefix(path, "/posts/") {
-		id := strings.TrimPrefix(path, "/posts/")
-		key := fmt.Sprintf("posts/%s.json", id)
-		_, err := s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: &bucket, Key: &key})
+		idStr := strings.TrimPrefix(path, "/posts/")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			return errorJSON(400, "invalid id: must be a number")
+		}
+		key := fmt.Sprintf("posts/%d.json", id)
+		_, err = s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: &bucket, Key: &key})
 		if err != nil {
 			return errorJSON(500, "delete failed")
 		}

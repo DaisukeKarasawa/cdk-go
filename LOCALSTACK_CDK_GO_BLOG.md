@@ -223,6 +223,7 @@ import (
  "fmt"
  "net/http"
  "os"
+ "strconv"
  "strings"
 
  "github.com/aws/aws-lambda-go/events"
@@ -230,9 +231,9 @@ import (
 )
 
 type Post struct {
- ID      string `json:"id"`
- Title   string `json:"title"`
- Content string `json:"content"`
+  ID      int    `json:"id"`
+  Title   string `json:"title"`
+  Content string `json:"content"`
 }
 
 func handleRequest(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -242,14 +243,18 @@ func handleRequest(ctx context.Context, req events.APIGatewayProxyRequest) (even
  // 簡易ルーティング
  if method == http.MethodGet && path == "/posts" {
   // 本来は S3 から一覧を構築
-  posts := []Post{{ID: "hello", Title: "Hello", Content: "Hello from LocalStack"}}
+  posts := []Post{{ID: 1, Title: "Hello", Content: "Hello from LocalStack"}}
   b, _ := json.Marshal(posts)
   return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(b), Headers: map[string]string{"Content-Type": "application/json"}}, nil
  }
  if method == http.MethodGet && strings.HasPrefix(path, "/posts/") {
-  id := strings.TrimPrefix(path, "/posts/")
-  // 本来は S3 の `posts/{id}.md` を取得して返す
-  content := fmt.Sprintf("# %s\n\nThis is a mock article.", id)
+  idStr := strings.TrimPrefix(path, "/posts/")
+  id, err := strconv.Atoi(idStr)
+  if err != nil {
+   return events.APIGatewayProxyResponse{StatusCode: 400, Body: "invalid id: must be a number"}, nil
+  }
+  // 本来は S3 の `posts/{id}.json` を取得して返す
+  content := fmt.Sprintf("# Post %d\n\nThis is a mock article.", id)
   return events.APIGatewayProxyResponse{StatusCode: 200, Body: content, Headers: map[string]string{"Content-Type": "text/markdown; charset=utf-8"}}, nil
  }
 
@@ -453,7 +458,7 @@ cdklocal deploy --require-approval never
 ```bash
 # サンプル記事（JSON）
 cat > hello.json <<'EOF'
-{"id":"hello","title":"Hello","content":"# Hello from LocalStack\nThis is a sample."}
+{"id":1,"title":"Hello","content":"# Hello from LocalStack\nThis is a sample."}
 EOF
 
 # デプロイ済みバケット名の特定
@@ -461,7 +466,7 @@ POSTS_BUCKET=$(awslocal s3 ls | awk '{print $3}' | grep -i blogposts | head -n1)
 echo "$POSTS_BUCKET"
 
 # S3 にアップロード（キーは posts/{id}.json）
-awslocal s3 cp hello.json s3://$POSTS_BUCKET/posts/hello.json
+awslocal s3 cp hello.json s3://$POSTS_BUCKET/posts/1.json
 
 # 確認
 awslocal s3 ls s3://$POSTS_BUCKET/posts/
@@ -490,26 +495,26 @@ BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
 # 1) 作成（POST /posts）
 curl -s -X POST \
   -H "Content-Type: application/json" \
-  -d '{"id":"hello","title":"Hello","content":"# Hello from API\nThis is markdown content."}' \
+  -d '{"id":1,"title":"Hello","content":"# Hello from API\nThis is markdown content."}' \
   "${BASE}/posts" | jq .
 
 # 2) 一覧（GET /posts）
 curl -s "${BASE}/posts" | jq .
 
-# 3) 取得（GET /posts/hello）
-curl -s "${BASE}/posts/hello" | jq .
+# 3) 取得（GET /posts/1）
+curl -s "${BASE}/posts/1" | jq .
 
-# 4) 更新（PUT /posts/hello）
+# 4) 更新（PUT /posts/1）
 curl -s -X PUT \
   -H "Content-Type: application/json" \
   -d '{"title":"Hello (updated)","content":"# Updated\nNew content."}' \
-  "${BASE}/posts/hello" | jq .
+  "${BASE}/posts/1" | jq .
 
-# 5) 削除（DELETE /posts/hello）
-curl -s -X DELETE "${BASE}/posts/hello" -i | head -n1
+# 5) 削除（DELETE /posts/1）
+curl -s -X DELETE "${BASE}/posts/1" -i | head -n1
 
-# 6) 削除確認（GET /posts/hello は 404）
-curl -s -o /dev/null -w "%{http_code}\n" "${BASE}/posts/hello"
+# 6) 削除確認（GET /posts/1 は 404）
+curl -s -o /dev/null -w "%{http_code}\n" "${BASE}/posts/1"
 ```
 
 期待結果:
@@ -605,15 +610,15 @@ curl -s -o /dev/null -w "%{http_code}\n" "${BASE}/posts/hello"
   REST_API_ID=$(awslocal apigateway get-rest-apis | jq -r '.items[0].id')
   BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
   curl -s -X POST -H "Content-Type: application/json" \
-    -d '{"id":"hello","title":"Hello","content":"# Hello from API\nThis is markdown content."}' \
+    -d '{"id":1,"title":"Hello","content":"# Hello from API\nThis is markdown content."}' \
     "${BASE}/posts" | jq .
   curl -s "${BASE}/posts" | jq .
-  curl -s "${BASE}/posts/hello" | jq .
+  curl -s "${BASE}/posts/1" | jq .
   curl -s -X PUT -H "Content-Type: application/json" \
     -d '{"title":"Hello (updated)","content":"# Updated\nNew content."}' \
-    "${BASE}/posts/hello" | jq .
-  curl -i -s -X DELETE "${BASE}/posts/hello" | head -n1
-  curl -s -o /dev/null -w "%{http_code}\n" "${BASE}/posts/hello"
+    "${BASE}/posts/1" | jq .
+  curl -i -s -X DELETE "${BASE}/posts/1" | head -n1
+  curl -s -o /dev/null -w "%{http_code}\n" "${BASE}/posts/1"
   ```
 
 - 期待結果: 各操作が期待ステータス/レスポンスで完了し、S3の `posts/` 配下が連動
@@ -800,6 +805,7 @@ import (
  "net/http"
  "os"
  "fmt"
+ "strconv"
  "strings"
 
  "github.com/aws/aws-lambda-go/events"
@@ -809,7 +815,7 @@ import (
 )
 
 type Post struct {
- ID      string `json:"id"`
+ ID      int    `json:"id"`
  Title   string `json:"title"`
  Content string `json:"content"`
 }
@@ -849,8 +855,12 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
  }
 
  if method == http.MethodGet && strings.HasPrefix(path, "/posts/") {
-  id := strings.TrimPrefix(path, "/posts/")
-  key := fmt.Sprintf("posts/%s.json", id)
+  idStr := strings.TrimPrefix(path, "/posts/")
+  id, err := strconv.Atoi(idStr)
+  if err != nil {
+   return errorJSON(400, "invalid id: must be a number")
+  }
+  key := fmt.Sprintf("posts/%d.json", id)
   po, err := s3Client.GetObject(ctx, &s3.GetObjectInput{Bucket: &bucket, Key: &key})
   if err != nil { return errorJSON(404, "not found") }
   b, _ := io.ReadAll(po.Body)
@@ -860,10 +870,10 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
 
  if method == http.MethodPost && path == "/posts" {
   var p Post
-  if err := json.Unmarshal([]byte(req.Body), &p); err != nil || p.ID == "" {
+  if err := json.Unmarshal([]byte(req.Body), &p); err != nil || p.ID == 0 {
    return errorJSON(400, "invalid body: require id,title,content")
   }
-  key := fmt.Sprintf("posts/%s.json", p.ID)
+  key := fmt.Sprintf("posts/%d.json", p.ID)
   b, _ := json.Marshal(p)
   ct := "application/json"
   _, err := s3Client.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &key, Body: bytes.NewReader(b), ContentType: &ct})
@@ -872,22 +882,30 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
  }
 
  if method == http.MethodPut && strings.HasPrefix(path, "/posts/") {
-  id := strings.TrimPrefix(path, "/posts/")
+  idStr := strings.TrimPrefix(path, "/posts/")
+  id, err := strconv.Atoi(idStr)
+  if err != nil {
+   return errorJSON(400, "invalid id: must be a number")
+  }
   var p Post
   if err := json.Unmarshal([]byte(req.Body), &p); err != nil { return errorJSON(400, "invalid body") }
   p.ID = id
-  key := fmt.Sprintf("posts/%s.json", id)
+  key := fmt.Sprintf("posts/%d.json", id)
   b, _ := json.Marshal(p)
   ct := "application/json"
-  _, err := s3Client.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &key, Body: bytes.NewReader(b), ContentType: &ct})
+  _, err = s3Client.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &key, Body: bytes.NewReader(b), ContentType: &ct})
   if err != nil { return errorJSON(500, "update failed") }
   return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(b), Headers: map[string]string{"Content-Type": "application/json"}}, nil
  }
 
  if method == http.MethodDelete && strings.HasPrefix(path, "/posts/") {
-  id := strings.TrimPrefix(path, "/posts/")
-  key := fmt.Sprintf("posts/%s.json", id)
-  _, err := s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: &bucket, Key: &key})
+  idStr := strings.TrimPrefix(path, "/posts/")
+  id, err := strconv.Atoi(idStr)
+  if err != nil {
+   return errorJSON(400, "invalid id: must be a number")
+  }
+  key := fmt.Sprintf("posts/%d.json", id)
+  _, err = s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: &bucket, Key: &key})
   if err != nil { return errorJSON(500, "delete failed") }
   return events.APIGatewayProxyResponse{StatusCode: 204, Body: ""}, nil
  }
