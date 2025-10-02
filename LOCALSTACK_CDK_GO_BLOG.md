@@ -6,41 +6,6 @@
 - まず作業項目をリストアップし、その後に各項目の詳細手順を順番に記載します。
 - すべてのコマンドは再現性を重視した形で提示し、macOS（darwin 24.6.0）前提で説明します。
 
-## 参考資料（必ず参照）
-
-- LocalStack Docs（設定・エンドポイント・ツール連携の基礎）
-  - <https://docs.localstack.cloud/>
-- AWS CDK v2 Developer Guide（CDKの基本・ブートストラップ・デプロイ）
-  - <https://docs.aws.amazon.com/cdk/v2/guide/home.html>
-- AWS CDK Construct Library（各サービスのConstruct仕様）
-  - <https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html>
-- Zenn: AWS CDKをLocalStackで練習（API Gateway + Lambda + S3 のローカル検証の実例と cdklocal の使い方の参考）
-  - <https://zenn.dev/okojomoeko/articles/4584312c51810d>
-- Zenn: CDK × LocalStack 関連の知見（cdklocal/awslocal やエンドポイントの扱いの参考）
-  - <https://zenn.dev/kin/articles/d22f9b30263afb>
-
----
-
-## タスク分類（本手順の適応プロセス）
-
-- 分類: 🟡 標準タスク（機能追加/複数ファイルの新規作成を想定）
-
-### 実行計画（チェックリスト）
-
-1. [独立] 前提ツールのインストール 🟢
-2. [独立] LocalStack の起動と基本検証 🟢
-3. [依存:1] CDK（Go）プロジェクトの初期化
-4. [依存:3] Go Lambda の雛形作成
-5. [依存:3-4] CDK スタック定義（S3 / Lambda / API Gateway）
-6. [依存:2-5] LocalStack への bootstrap
-7. [依存:6] LocalStack へデプロイ
-8. [依存:7] 記事 CRUD（API 推奨）/ S3 直接（任意）
-9. [依存:7-8] CRUD 動作確認（curl / awslocal）
-10. [独立] 運用コマンド（更新/ログ/破棄）
-11. [独立] トラブルシューティング
-
----
-
 ## 作業項目一覧（先に全体像）
 
 - 環境準備
@@ -307,7 +272,7 @@ func main() {
 
 - 目的: S3（記事格納用）、Lambda（API）、API Gateway（公開）を CDK（Go）で定義
 - リスク: Goバイナリのクロスコンパイル設定やアセット配置ミス
-- 実際に行うこと: S3バケットを作成し、LambdaにS3の読み書き権限を付与し、事前にビルドしたZIPアセット（ `dist/lambda/blog.zip` ）を `Code.FromAsset` で参照、API GatewayでLambdaを統合してRESTエンドポイントを作ります。
+- 実際に行うこと: S3バケットを作成し、LambdaにS3の読み書き権限を付与し、事前にビルドしたZIPアセット（ `dist/blog.zip` ）を `Code.FromAsset` で参照、API GatewayでLambdaを統合してRESTエンドポイントを作ります。
 - 結果: 記事データの保存先（S3）と、それにアクセスする実行関数（Lambda）、外部公開のHTTP入口（API Gateway）が1つのスタックとして連携します。
 
 依存の追加（`go.mod` に追記される想定）:
@@ -358,7 +323,7 @@ func NewCdkGoStack(scope constructs.Construct, id string, props *CdkGoStackProps
  fn := awslambda.NewFunction(stack, awsString("BlogApi"), &awslambda.FunctionProps{
   Runtime: awslambda.Runtime_PROVIDED_AL2(),
   Handler: awsString("bootstrap"),
-  Code: awslambda.Code_FromAsset(awsString("dist/lambda/blog.zip"), nil),
+  Code: awslambda.Code_FromAsset(awsString("dist/blog.zip"), nil),
   Environment: &map[string]*string{
    "POSTS_BUCKET": bucket.BucketName(),
   },
@@ -392,9 +357,9 @@ API ルーティングは Lambda 側の `APIGatewayProxyRequest.Path` で分岐�
 
 ```bash
 # 事前: Code.FromAsset を使用している場合は Lambda ZIP を用意（未作成だと "Cannot find asset" で失敗）
-mkdir -p dist/lambda/blog
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/lambda/blog/bootstrap lambda/cmd/blog
-( cd dist/lambda/blog && zip -j ../blog.zip bootstrap )
+mkdir -p dist/blog
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/blog/bootstrap lambda/cmd/blog
+( cd dist/blog && zip -j ../blog.zip bootstrap )
 
 # アカウントIDは LocalStack 固定の 000000000000 を使用
 echo $AWS_DEFAULT_REGION  # ap-northeast-1 が前提
@@ -430,6 +395,11 @@ awscdk.NewCfnOutput(stack, awsString("ApiEndpoint"), &awscdk.CfnOutputProps{
 })
 ```
 
+注意（リージョン整合性）:
+- デプロイとAPI取得は同一リージョンで行ってください。
+- 基本は `REGION=${AWS_DEFAULT_REGION:-us-east-1}` として、取得系コマンドでは `--region "$REGION"` を付けると安全です。
+- 出力された Stack ARN に含まれるリージョン（例: `arn:aws:cloudformation:us-east-1:...`）が実際に使われたリージョンです。
+
 API の URL 形式（LocalStack）:
 
 ```text
@@ -447,8 +417,11 @@ http://localhost:4566/restapis/{restApiId}/prod/_user_request_/posts/{id}
 手順（API・最小実装／GET のみ）:
 
 ```bash
+# リージョンの決定（Stack ARNのリージョンに合わせる / 既定us-east-1）
+REGION=${AWS_DEFAULT_REGION:-us-east-1}
+
 # REST API ID の取得
-REST_API_ID=$(awslocal apigateway get-rest-apis | jq -r '.items[0].id')
+REST_API_ID=$(awslocal --region "$REGION" apigateway get-rest-apis | jq -r '.items[0].id')
 BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
 
 # 1) 一覧（GET /posts）
@@ -469,9 +442,9 @@ CRUD を有効化したい場合（付録Aを適用）:
 2) Lambda を再ビルドして ZIP を更新し、再デプロイします。
 
 ```bash
-mkdir -p dist/lambda/blog
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/lambda/blog/bootstrap lambda/cmd/blog
-( cd dist/lambda/blog && zip -j ../blog.zip bootstrap )
+mkdir -p dist/blog
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/blog/bootstrap lambda/cmd/blog
+( cd dist/blog && zip -j ../blog.zip bootstrap )
 cdklocal deploy --require-approval never
 ```
 
@@ -505,33 +478,38 @@ awslocal s3 ls s3://$POSTS_BUCKET/posts/
 手順:
 
 ```bash
+# リージョンの決定（Stack ARNのリージョンに合わせる / 既定us-east-1）
+REGION=${AWS_DEFAULT_REGION:-us-east-1}
+
 # RestApiId の取得
-REST_API_ID=$(awslocal apigateway get-rest-apis | jq -r '.items[0].id')
+REST_API_ID=$(awslocal --region "$REGION" apigateway get-rest-apis | jq -r '.items[0].id')
 echo "$REST_API_ID"
+
+BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
 
 # 1) 作成（POST /posts）
 curl -s -X POST \
   -H "Content-Type: application/json" \
   -d '{"id":"hello","title":"Hello","content":"# Hello from API\nThis is markdown content."}' \
-  "http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_/posts" | jq .
+  "${BASE}/posts" | jq .
 
 # 2) 一覧（GET /posts）
-curl -s "http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_/posts" | jq .
+curl -s "${BASE}/posts" | jq .
 
 # 3) 取得（GET /posts/hello）
-curl -s "http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_/posts/hello" | jq .
+curl -s "${BASE}/posts/hello" | jq .
 
 # 4) 更新（PUT /posts/hello）
 curl -s -X PUT \
   -H "Content-Type: application/json" \
   -d '{"title":"Hello (updated)","content":"# Updated\nNew content."}' \
-  "http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_/posts/hello" | jq .
+  "${BASE}/posts/hello" | jq .
 
 # 5) 削除（DELETE /posts/hello）
-curl -s -X DELETE "http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_/posts/hello" -i | head -n1
+curl -s -X DELETE "${BASE}/posts/hello" -i | head -n1
 
 # 6) 削除確認（GET /posts/hello は 404）
-curl -s -o /dev/null -w "%{http_code}\n" "http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_/posts/hello"
+curl -s -o /dev/null -w "%{http_code}\n" "${BASE}/posts/hello"
 ```
 
 期待結果:
@@ -549,19 +527,122 @@ curl -s -o /dev/null -w "%{http_code}\n" "http://localhost:4566/restapis/${REST_
 - 実際に行うこと: コード変更後の再デプロイ、Lambdaのログ追跡、作成済みスタックの破棄といった日常運用タスクを実行します。
 - 結果: 変更の反映、問題発生時の原因追跡、不要リソースのクリーンアップができ、ローカルの環境を健全に保てます。
 
-手順:
+更新対象ごとの手順:
 
-```bash
-# Lambda コード変更後の再デプロイ
-cdklocal deploy --require-approval never
+1) `lambda/cmd/blog/main.go`（Lambdaロジックを変更した）
 
-# Lambda 実行ログ（CloudWatch Logs エミュレーション）
-awslocal logs describe-log-groups
-awslocal logs tail "/aws/lambda/BlogApi" --follow
+- 影響: Lambda の実行バイナリが変わるため、再ビルドとZIP再生成が必要
+- 手順:
 
-# スタック破棄（LocalStack 内の作成リソースを削除）
-cdklocal destroy --force
-```
+  ```bash
+  # ビルド→ZIP
+  mkdir -p dist/blog
+  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/blog/bootstrap lambda/cmd/blog
+  ( cd dist/blog && zip -j ../blog.zip bootstrap )
+
+  # デプロイ
+  cdklocal deploy --require-approval never
+  ```
+
+- 期待結果: 新しいロジックがAPI経由で反映（エンドポイントURL/RestApiIdは継続利用）
+
+2) `cdk-go.go` や スタックファイル（S3/Lambda/APIGWなどCDK定義を変更した）
+
+- 影響: インフラ定義が変わるため、synth→deployが必要（破壊的変更は注意）
+- 手順:
+
+  ```bash
+  cdklocal synth
+  cdklocal deploy --require-approval never
+  ```
+
+- 期待結果: CloudFormation相当の差分適用でLocalStackのリソースが更新
+
+3) `docker-compose.yml`（LocalStackサービスの構成を変更した）
+
+- 影響: LocalStackで有効化されるサービスや設定が変わる
+- 手順:
+
+  ```bash
+  docker compose down
+  docker compose up -d
+  # 必要に応じて bootstrap からやり直し
+  cdklocal bootstrap aws://000000000000/ap-northeast-1
+  cdklocal deploy --require-approval never
+  ```
+
+- 期待結果: 追加したサービス（例: ssm, sts, ecr）が有効化され、CDKのbootstrap/deployが正常化
+
+4) Nodeツール（`package.json`/`node_modules`）や cdklocal の導入方法を変えた
+
+- 影響: `cdklocal` が内部で `aws-cdk` を解決できない場合がある
+- 手順（推奨: ローカル導入+npx）:
+
+  ```bash
+  npm install -D aws-cdk aws-cdk-local
+  npx cdklocal --version
+  npx cdk --version
+  ```
+
+  代替（グローバル）:
+
+  ```bash
+  npm install -g aws-cdk aws-cdk-local
+  export NODE_PATH=$(npm root -g)  # 必要に応じて
+  cdklocal --version
+  cdk --version
+  ```
+
+- 期待結果: `cdklocal` 実行時の MODULE_NOT_FOUND が解消
+
+5) 記事データの検証（CRUD版のとき）
+
+- 影響: LambdaのS3アクセス/権限やデータ構造の破壊
+- 手順:
+
+  ```bash
+  # 作成→一覧→取得→更新→削除→削除確認
+  REST_API_ID=$(awslocal apigateway get-rest-apis | jq -r '.items[0].id')
+  BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
+  curl -s -X POST -H "Content-Type: application/json" \
+    -d '{"id":"hello","title":"Hello","content":"# Hello from API\nThis is markdown content."}' \
+    "${BASE}/posts" | jq .
+  curl -s "${BASE}/posts" | jq .
+  curl -s "${BASE}/posts/hello" | jq .
+  curl -s -X PUT -H "Content-Type: application/json" \
+    -d '{"title":"Hello (updated)","content":"# Updated\nNew content."}' \
+    "${BASE}/posts/hello" | jq .
+  curl -i -s -X DELETE "${BASE}/posts/hello" | head -n1
+  curl -s -o /dev/null -w "%{http_code}\n" "${BASE}/posts/hello"
+  ```
+
+- 期待結果: 各操作が期待ステータス/レスポンスで完了し、S3の `posts/` 配下が連動
+
+ログ/監視:
+
+- Lambda 実行ログ（LocalStackのCloudWatch Logsエミュレーション）
+
+  ```bash
+  awslocal logs describe-log-groups
+  awslocal logs tail "/aws/lambda/BlogApi" --follow
+  ```
+
+- API Gateway の呼び出し確認は `curl` と `jq` を活用（上記検証手順）
+
+破棄/クリーンアップ:
+
+- スタック破棄
+
+  ```bash
+  cdklocal destroy --force
+  ```
+
+- LocalStack 全体の停止/再起動
+
+  ```bash
+  docker compose down
+  docker compose up -d
+  ```
 
 ---
 
@@ -603,14 +684,14 @@ cdklocal destroy --force
    - **症状**: `Service 'ssm' is not enabled. Please check your 'SERVICES' configuration variable.`
    - **解決策**: `docker-compose.yml` の `SERVICES` に `ssm, sts, ecr` を追加して LocalStack を再起動
 
-5. **`panic: Cannot find asset at dist/lambda/blog.zip`**
-   - **原因**: CDK アプリ内で `awslambda.Code_FromAsset("dist/lambda/blog.zip")` を使用しており、ZIP が未作成
+5. **`panic: Cannot find asset at dist/blog.zip`**
+   - **原因**: CDK アプリ内で `awslambda.Code_FromAsset("dist/blog.zip")` を使用しており、ZIP が未作成
    - **解決策**: 事前に Lambda をビルドして ZIP を作成
 
      ```bash
-     mkdir -p dist/lambda/blog
-     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/lambda/blog/bootstrap lambda/cmd/blog
-     ( cd dist/lambda/blog && zip -j ../blog.zip bootstrap )
+     mkdir -p dist/blog
+     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/blog/bootstrap lambda/cmd/blog
+     ( cd dist/blog && zip -j ../blog.zip bootstrap )
      ```
 
 ##### cdklocal のインストール問題
@@ -753,7 +834,7 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
   prefix := "posts/"
   out, err := s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{Bucket: &bucket, Prefix: &prefix})
   if err != nil { return errorJSON(500, "list failed") }
-  var posts []Post
+  posts := make([]Post, 0)
   for _, obj := range out.Contents {
    key := *obj.Key
    if !strings.HasSuffix(key, ".json") { continue }
@@ -870,9 +951,9 @@ SHELL := /bin/bash
 
 # Go Lambda をビルドしてZIP化（Linux/amd64でビルド、bootstrap実行形式）
 build-lambda:
- mkdir -p dist/lambda/blog
- CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/lambda/blog/bootstrap lambda/cmd/blog
- cd dist/lambda/blog && zip -j ../blog.zip bootstrap
+ mkdir -p dist/blog
+ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/blog/bootstrap lambda/cmd/blog
+ cd dist/blog && zip -j ../blog.zip bootstrap
 
 bootstrap:
  cdklocal bootstrap aws://000000000000/ap-northeast-1

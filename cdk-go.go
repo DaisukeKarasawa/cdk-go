@@ -29,7 +29,7 @@ func NewCdkGoStack(scope constructs.Construct, id string, props *CdkGoStackProps
 	fn := awslambda.NewFunction(stack, jsii.String("BlogApi"), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
 		Handler: jsii.String("bootstrap"),
-		Code:    awslambda.Code_FromAsset(jsii.String("dist/lambda/blog.zip"), nil),
+		Code:    awslambda.Code_FromAsset(jsii.String("dist/blog.zip"), nil),
 		Environment: &map[string]*string{
 			"POSTS_BUCKET": bucket.BucketName(),
 		},
