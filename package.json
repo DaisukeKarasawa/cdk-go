@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "aws-cdk": "^2.1029.4",
+    "aws-cdk-local": "^3.0.1"
+  }
+}
