@@ -106,7 +106,10 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
 			return errorJSON(400, "invalid body: require id,title,content")
 		}
 		key := fmt.Sprintf("posts/%d.json", p.ID)
-		b, _ := json.Marshal(p)
+        b, err := json.Marshal(p)
+        if err != nil {
+            return errorJSON(500, "failed to marshal post")
+        }
 		ct := "application/json"
 		_, err := s3Client.PutObject(ctx, &s3.PutObjectInput{
 			Bucket:      &bucket,
@@ -136,7 +139,10 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
 		}
 		p.ID = id
 		key := fmt.Sprintf("posts/%d.json", id)
-		b, _ := json.Marshal(p)
+        b, err := json.Marshal(p)
+        if err != nil {
+            return errorJSON(500, "failed to marshal post")
+        }
 		ct := "application/json"
 		_, err = s3Client.PutObject(ctx, &s3.PutObjectInput{
 			Bucket:      &bucket,
@@ -172,7 +178,10 @@ func handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIG
 }
 
 func jsonOK(v interface{}) events.APIGatewayProxyResponse {
-	b, _ := json.Marshal(v)
+    b, err := json.Marshal(v)
+    if err != nil {
+        return events.APIGatewayProxyResponse{StatusCode: 500, Body: `{"error":"failed to marshal response"}`}
+    }
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Body:       string(b),
@@ -181,7 +190,14 @@ func jsonOK(v interface{}) events.APIGatewayProxyResponse {
 }
 
 func errorJSON(code int, msg string) (events.APIGatewayProxyResponse, error) {
-	b, _ := json.Marshal(map[string]string{"error": msg})
+    b, err := json.Marshal(map[string]string{"error": msg})
+    if err != nil {
+        return events.APIGatewayProxyResponse{
+            StatusCode: code,
+            Body:       `{"error":"failed to marshal error response"}`,
+            Headers:    map[string]string{"Content-Type": "application/json"},
+        }, nil
+    }
 	return events.APIGatewayProxyResponse{
 		StatusCode: code,
 		Body:       string(b),
