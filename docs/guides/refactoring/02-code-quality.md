@@ -105,9 +105,9 @@ import (
 // Success 成功レスポンスを生成
 func Success(data interface{}) events.APIGatewayProxyResponse {
     body, err := json.Marshal(data)
-    if err != nil {
-        return Error(http.StatusInternalServerError, "failed to marshal response")
-    }
+	if err != nil {
+		return errorResponse(http.StatusInternalServerError, "failed to marshal response")
+	}
     return events.APIGatewayProxyResponse{
         StatusCode: http.StatusOK,
         Body:       string(body),
@@ -120,9 +120,9 @@ func Success(data interface{}) events.APIGatewayProxyResponse {
 // Created 作成成功レスポンスを生成
 func Created(data interface{}) events.APIGatewayProxyResponse {
     body, err := json.Marshal(data)
-    if err != nil {
-        return Error(http.StatusInternalServerError, "failed to marshal response")
-    }
+	if err != nil {
+		return errorResponse(http.StatusInternalServerError, "failed to marshal response")
+	}
     return events.APIGatewayProxyResponse{
         StatusCode: http.StatusCreated,
         Body:       string(body),
@@ -140,42 +140,42 @@ func NoContent() events.APIGatewayProxyResponse {
 	}
 }
 
-// Error エラーレスポンスを生成
-func Error(code int, message string) events.APIGatewayProxyResponse {
-    body, err := json.Marshal(map[string]string{
-        "error": message,
-    })
-    if err != nil {
-        return events.APIGatewayProxyResponse{
-            StatusCode: code,
-            Body:       `{"error":"failed to marshal error response"}`,
-            Headers: map[string]string{
-                "Content-Type": "application/json",
-            },
-        }
-    }
-    return events.APIGatewayProxyResponse{
-        StatusCode: code,
-        Body:       string(body),
-        Headers: map[string]string{
-            "Content-Type": "application/json",
-        },
-    }
+// エラーレスポンス
+func errorResponse(code int, message string) events.APIGatewayProxyResponse {
+	body, err := json.Marshal(map[string]string{
+		"error": message,
+	})
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: code,
+			Body:       `{"error":"failed to marshal error response"}`,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}
+	}
+	return events.APIGatewayProxyResponse{
+		StatusCode: code,
+		Body:       string(body),
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
 }
 
-// BadRequest バッドリクエストエラー
+// バッドリクエストエラー
 func BadRequest(message string) events.APIGatewayProxyResponse {
-	return Error(http.StatusBadRequest, message)
+	return errorResponse(http.StatusBadRequest, message)
 }
 
-// NotFound リソース未発見エラー
+// リソース未発見エラー
 func NotFound(message string) events.APIGatewayProxyResponse {
-	return Error(http.StatusNotFound, message)
+	return errorResponse(http.StatusNotFound, message)
 }
 
-// InternalServerError 内部サーバーエラー
+// 内部サーバーエラー
 func InternalServerError(message string) events.APIGatewayProxyResponse {
-	return Error(http.StatusInternalServerError, message)
+	return errorResponse(http.StatusInternalServerError, message)
 }
 ```
 
