@@ -57,7 +57,10 @@ func handleRequest(ctx context.Context, req events.APIGatewayProxyRequest) (even
 	if method == http.MethodGet && path == "/posts" {
 		// 本来は S3 から一覧を構築
 		posts := []Post{{ID: 1, Title: "Hello", Content: "Hello from LocalStack"}}
-		b, _ := json.Marshal(posts)
+        b, err := json.Marshal(posts)
+        if err != nil {
+            return events.APIGatewayProxyResponse{StatusCode: 500, Body: `{"error":"failed to marshal response"}`}, nil
+        }
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Body:       string(b),
