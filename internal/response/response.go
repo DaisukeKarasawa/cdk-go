@@ -9,7 +9,10 @@ import (
 
 // 成功レスポンスを生成
 func Success(data interface{}) events.APIGatewayProxyResponse {
-	body, _ := json.Marshal(data)
+	body, err := json.Marshal(data)
+	if err != nil {
+		return errorResponse(http.StatusInternalServerError, "failed to marshal response")
+	}
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
     Body:       string(body),
@@ -21,7 +24,10 @@ func Success(data interface{}) events.APIGatewayProxyResponse {
 
 // 作成成功レスポンス
 func Created(data interface{}) events.APIGatewayProxyResponse {
-  body, _ := json.Marshal(data)
+  body, err := json.Marshal(data)
+  if err != nil {
+    return errorResponse(http.StatusInternalServerError, "failed to marshal response")
+  }
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusCreated,
 		Body:       string(body),
@@ -41,9 +47,18 @@ func NoContent() events.APIGatewayProxyResponse {
 
 // エラーレスポンス
 func errorResponse(code int, message string) events.APIGatewayProxyResponse {
-	body, _ := json.Marshal(map[string]string{
+	body, err := json.Marshal(map[string]string{
 		"error": message,
 	})
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: code,
+			Body:       `{"error":"failed to marshal error response"}`,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}
+	}
 	return events.APIGatewayProxyResponse{
 		StatusCode: code,
 		Body:       string(body),

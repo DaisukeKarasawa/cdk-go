@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -45,10 +44,10 @@ func isNotFoundError(err error) bool {
 
 // S3キーから記事を取得
 func (r *S3Repository) getPostByKey(ctx context.Context, key string) (*model.Post, error) {
-	out, err := r.client.GetObject(ctx, &s3.GetObjectInput){
+	out, err := r.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: &r.bucket,
 		Key:    &key,
-	}
+	})
 	if err != nil {
 		if isNotFoundError(err) {
 			return nil, fmt.Errorf("post not found")
@@ -163,6 +162,7 @@ func (r *S3Repository) DeletePost(ctx context.Context, id int) error {
 	})
 	if err != nil {
 		logger.Error("failed to delete post", "id", id, "error", err)
+		return fmt.Errorf("failed to delete post: %w", err)
 	}
 
 	logger.Info("successfully deleted post", "id", id)

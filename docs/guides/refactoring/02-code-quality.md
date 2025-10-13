@@ -218,7 +218,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
