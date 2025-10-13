@@ -109,7 +109,7 @@ awslocal logs tail "/aws/lambda/BlogApi" --follow
 
 ```bash
 # REST API ID 取得
-REGION=${AWS_DEFAULT_REGION:-us-east-1}
+REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}
 REST_API_ID=$(awslocal --region "$REGION" apigateway get-rest-apis | jq -r '.items[0].id')
 BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
 
@@ -269,9 +269,10 @@ go get github.com/aws/aws-lambda-go@latest
 ```
 
 - 互換性のメモ:
+
   - `go.mod` の `go` はメジャー.マイナーのみ（`1.23`）。`1.23.0` は無効です。
   - `toolchain` ディレクティブは Go 1.21+ で利用可能。古いGoで `unknown directive: toolchain` が出る場合は、
-    1) Docker の `go-dev` 環境で実行する、または 2) 一時的に `toolchain` 行を外して実行してください。
+    1. Docker の `go-dev` 環境で実行する、または 2) 一時的に `toolchain` 行を外して実行してください。
 
 - `go.mod` 記述の例（2パターン）:
 

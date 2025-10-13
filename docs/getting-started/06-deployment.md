@@ -83,8 +83,8 @@ CdkGoStack.BlogApiGatewayEndpoint = https://xxxxxxxxxx.execute-api.ap-northeast-
 ### 方法1: AWS CLI で取得
 
 ```bash
-# リージョンの決定（Stack ARNのリージョンに合わせる / 既定us-east-1）
-REGION=${AWS_DEFAULT_REGION:-us-east-1}
+# リージョンの決定（Stack ARNのリージョンに合わせる / 既定ap-northeast-1）
+REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}
 
 # REST API ID の取得
 REST_API_ID=$(awslocal --region "$REGION" apigateway get-rest-apis | jq -r '.items[0].id')
@@ -121,7 +121,7 @@ http://localhost:4566/restapis/{restApiId}/prod/_user_request_/posts/{id}
 
 ```bash
 # REST API ID を取得
-REGION=${AWS_DEFAULT_REGION:-us-east-1}
+REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}
 REST_API_ID=$(awslocal --region "$REGION" apigateway get-rest-apis | jq -r '.items[0].id')
 BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
 
@@ -142,7 +142,7 @@ curl -s "${BASE}/posts/1"
 ### リージョン整合性
 
 - デプロイとAPI取得は同一リージョンで行ってください
-- 基本は `REGION=${AWS_DEFAULT_REGION:-us-east-1}` として、取得系コマンドでは `--region "$REGION"` を付けると安全
+- 基本は `REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}` として、取得系コマンドでは `--region "$REGION"` を付けると安全
 - 出力された Stack ARN に含まれるリージョンが実際に使われたリージョン
 
 ### アセットの更新

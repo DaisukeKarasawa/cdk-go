@@ -66,15 +66,15 @@ func env() *awscdk.Environment {
 	// Account/Region-dependent features and context lookups will not work, but a
 	// single synthesized template can be deployed anywhere.
 	//---------------------------------------------------------------------------
-	return nil
+	// return nil
 
 	// Uncomment if you know exactly what account and region you want to deploy
 	// the stack to. This is the recommendation for production stacks.
 	//--------------------------------------------------------------------------
-	// return &awscdk.Environment{
-	// 	 Account: jsii.String("123456789012"),
-	// 	 Region:  jsii.String("us-east-1"),
-	// }
+	return &awscdk.Environment{
+		Account: jsii.String("000000000000"),
+		Region:  jsii.String("ap-northeast-1"),
+	}
 
 	// Uncomment to specialize this stack for the AWS Account and Region that are
 	// implied by the current CLI configuration. This is recommended for dev

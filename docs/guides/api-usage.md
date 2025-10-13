@@ -15,8 +15,8 @@
 ### REST API ID の取得
 
 ```bash
-# リージョンの決定（Stack ARNのリージョンに合わせる / 既定us-east-1）
-REGION=${AWS_DEFAULT_REGION:-us-east-1}
+# リージョンの決定（Stack ARNのリージョンに合わせる / 既定ap-northeast-1）
+REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}
 
 # REST API ID の取得
 REST_API_ID=$(awslocal --region "$REGION" apigateway get-rest-apis | jq -r '.items[0].id')
@@ -133,7 +133,7 @@ curl -s -o /dev/null -w "%{http_code}\n" "${BASE}/posts/1"
 #!/bin/bash
 
 # 設定
-REGION=${AWS_DEFAULT_REGION:-us-east-1}
+REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}
 REST_API_ID=$(awslocal --region "$REGION" apigateway get-rest-apis | jq -r '.items[0].id')
 BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
 

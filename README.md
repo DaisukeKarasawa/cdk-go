@@ -35,7 +35,7 @@ make deploy
 
 ```bash
 # API エンドポイント取得
-REGION=${AWS_DEFAULT_REGION:-us-east-1}
+REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}
 REST_API_ID=$(awslocal --region "$REGION" apigateway get-rest-apis | jq -r '.items[0].id')
 BASE="http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_"
 
