@@ -2,8 +2,6 @@ module cdk-go
 
 go 1.23.0
 
-toolchain go1.23.12
-
 require (
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.219.0
 	github.com/aws/aws-lambda-go v1.49.0

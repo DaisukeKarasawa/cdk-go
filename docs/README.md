@@ -26,6 +26,7 @@
 - [API 使用方法](./guides/api-usage.md) - CRUD操作のAPIエンドポイント使用例
 - [運用手順](./guides/operations.md) - 更新・ログ確認・破棄の手順
 - [トラブルシューティング](./guides/troubleshooting.md) - よくある問題と解決策
+- [リファクタリング手順書](./guides/refactoring.md) - 本格的なプロダクション対応への改善手順
 
 ### 📋 Reference（リファレンス）
 
@@ -40,6 +41,7 @@
 - **初回構築者**: Getting Started を順番に実行
 - **運用担当者**: Guides を参照
 - **開発者**: Reference で詳細実装を確認
+- **リファクタリング担当者**: [リファクタリング手順書](./guides/refactoring.md) で本格的な改善を実施
 
 ## 🔄 将来の拡張
 
