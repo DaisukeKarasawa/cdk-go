@@ -33,6 +33,7 @@ bin/
 *.test
 *.out
 coverage.out
+cdk-go
 
 # Env files
 .env
