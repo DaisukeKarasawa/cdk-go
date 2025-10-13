@@ -10,7 +10,14 @@
 
 ### 1. 事前準備
 
-Lambda ZIPアセットを作成（未作成の場合）：
+**推奨方法（Docker環境）**:
+
+```bash
+# Docker環境でLambda ZIPアセットを作成
+make build-docker
+```
+
+**代替方法（ローカルGo環境）**:
 
 ```bash
 mkdir -p dist/blog
@@ -141,6 +148,18 @@ curl -s "${BASE}/posts/1"
 ### アセットの更新
 
 Lambda コードを変更した場合は、再ビルド→再デプロイが必要：
+
+**推奨方法（Docker環境）**:
+
+```bash
+# Lambda 再ビルド（Docker環境）
+make build-docker
+
+# 再デプロイ
+cdklocal deploy --require-approval never
+```
+
+**代替方法（ローカルGo環境）**:
 
 ```bash
 # Lambda 再ビルド

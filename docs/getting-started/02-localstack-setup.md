@@ -10,7 +10,9 @@ LocalStack を Docker 上で起動し、S3 等の基本動作を確認します�
 
 ## Docker Compose 設定
 
-プロジェクト直下に `docker-compose.yml` を作成します：
+**このリポジトリを使用する場合**: 既に `docker-compose.yml` が含まれており、`go-dev`（Go 1.23開発環境）と `localstack` サービスが定義されています。
+
+**新規プロジェクトの場合**: プロジェクト直下に `docker-compose.yml` を作成します：
 
 ```yaml
 # docker-compose.yml（プロジェクト直下に作成）
@@ -36,6 +38,15 @@ services:
 ## 起動と確認
 
 ### 1. LocalStack 起動
+
+**このリポジトリを使用する場合**:
+
+```bash
+# LocalStackのみ起動（最小構成）
+docker compose up -d localstack
+```
+
+**新規プロジェクトの場合**:
 
 ```bash
 docker compose up -d

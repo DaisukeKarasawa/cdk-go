@@ -331,3 +331,7 @@ func init() {
 ```bash
 awslocal logs tail "/aws/lambda/BlogApi" --follow
 ```
+
+---
+
+> **💡 Docker環境での開発**: 依存関係の更新が必要な場合は `docker compose exec go-dev go mod tidy` を実行してください。

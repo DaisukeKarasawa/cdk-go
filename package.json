@@ -1,6 +1,32 @@
 {
   "devDependencies": {
-    "aws-cdk": "^2.1029.4",
+    "aws-cdk": "^2.1030.0",
     "aws-cdk-local": "^3.0.1"
-  }
+  },
+  "name": "cdk-go",
+  "version": "1.0.0",
+  "description": "AWS CDK（Go）とLambda（Go）を使用したサーバーレスブログAPIプロジェクトです。LocalStack上で動作し、クラウドコストをかけずにローカルで開発・テストできます。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "diff": "^5.2.0",
+    "fsevents": "^2.3.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DaisukeKarasawa/cdk-go.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/DaisukeKarasawa/cdk-go/issues"
+  },
+  "homepage": "https://github.com/DaisukeKarasawa/cdk-go#readme"
 }

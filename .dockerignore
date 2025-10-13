@@ -1,0 +1,28 @@
+# Git関連
+.git
+.gitignore
+
+# ビルド成果物
+dist/
+cdk.out/
+
+# Node.js関連
+node_modules/
+npm-debug.log*
+
+# IDE関連
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS関連
+.DS_Store
+Thumbs.db
+
+# ログファイル
+*.log
+
+# 一時ファイル
+*.tmp
+*.temp

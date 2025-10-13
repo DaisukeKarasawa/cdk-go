@@ -2,6 +2,8 @@ module cdk-go
 
 go 1.23.0
 
+toolchain go1.23.12
+
 require (
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.219.0
 	github.com/aws/aws-lambda-go v1.49.0
@@ -10,6 +12,8 @@ require (
 	github.com/aws/constructs-go/constructs/v10 v10.4.2
 	github.com/aws/jsii-runtime-go v1.113.0
 )
+
+require github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.1 // indirect
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
@@ -26,7 +30,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.29.6 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.6 // indirect
 	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/cdklabs/awscdk-asset-awscli-go/awscliv1/v2 v2.2.242 // indirect

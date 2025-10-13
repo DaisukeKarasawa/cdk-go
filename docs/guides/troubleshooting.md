@@ -160,11 +160,85 @@ mkdir my-cdk-app && cd my-cdk-app && cdk init app --language go
 
 ## Go 環境関連の問題
 
+### Go バージョン・toolchain関連
+
+#### 1. `unknown directive toolchain` エラー
+
+**症状**: `go.mod` で `toolchain go1.23.12` が認識されない
+
+**原因**: Go 1.21未満のバージョンを使用している
+
+**解決策**:
+
+1. **Docker環境を使用（推奨）**:
+
+   ```bash
+   make setup-dev  # Go 1.23環境をセットアップ
+   ```
+
+2. **ローカルGoをアップグレード**:
+   ```bash
+   brew upgrade go  # Go 1.21+ にアップグレード
+   ```
+
+#### 2. `maximum version supported by tidy is 1.20` エラー
+
+**症状**: `go mod tidy` でGo 1.20より新しいバージョンがサポートされない
+
+**原因**: ローカルのGoバージョンが古い
+
+**解決策**:
+
+1. **Docker環境を使用（推奨）**:
+
+   ```bash
+   make setup-dev
+   docker compose exec go-dev go mod tidy
+   ```
+
+2. **ローカルGoをアップグレード**:
+   ```bash
+   brew upgrade go
+   go mod tidy
+   ```
+
+#### 3. zipコマンドが見つからない
+
+**症状**: `sh: zip: not found` エラー
+
+**Docker使用時**:
+
+```bash
+# go-devコンテナは起動時にzipを自動インストール
+# 再起動で解決
+make clean-dev
+make setup-dev
+```
+
+**ローカル環境**:
+
+```bash
+brew install zip
+```
+
+### Docker Compose 表記の統一
+
+**症状**: `docker-compose` コマンドが見つからない
+
+**原因**: Docker Compose v2では `docker compose`（スペース区切り）を使用
+
+**解決策**:
+
+```bash
+# v2の正しい表記
+docker compose up -d
+docker compose exec go-dev go mod tidy
+
+# v1の表記（非推奨）
+docker-compose up -d
+```
+
 ### Go モジュール取得失敗
-
-**症状**: unexpected EOF / proxyエラー等でモジュール取得に失敗
-
-**原因**: ネットワークの一時的な断/タイムアウト、GOPROXY経由の取得失敗、バージョン解決の揺らぎ
 
 **解決策**:
 

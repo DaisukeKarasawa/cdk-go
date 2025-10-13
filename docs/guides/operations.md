@@ -12,7 +12,17 @@
 
 **影響**: Lambda の実行バイナリが変わるため、再ビルドとZIP再生成が必要
 
-**手順**:
+**推奨手順（Docker環境）**:
+
+```bash
+# Docker環境でビルド→ZIP
+make build-docker
+
+# デプロイ
+cdklocal deploy --require-approval never
+```
+
+**代替手順（ローカルGo環境）**:
 
 ```bash
 # ビルド→ZIP
@@ -187,6 +197,33 @@ awslocal logs delete-log-group --log-group-name "/aws/lambda/BlogApi"
 ## Makefile を使った運用（推奨）
 
 プロジェクトルートに `Makefile` がある場合：
+
+**Docker環境での開発**:
+
+```bash
+# 開発環境セットアップ
+make setup-dev
+
+# Lambda ビルド（Docker環境）
+make build-docker
+
+# テスト実行（Docker環境）
+make test-docker
+
+# デプロイ
+make deploy
+
+# ログ監視
+make logs
+
+# 破棄
+make destroy
+
+# 開発環境クリーンアップ
+make clean-dev
+```
+
+**従来のローカル環境**:
 
 ```bash
 # Lambda ビルド

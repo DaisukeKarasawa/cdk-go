@@ -237,3 +237,7 @@ awslocal s3 ls s3://$POSTS_BUCKET/posts/
 - **POST/PUT/DELETE**: 未実装（404エラー）
 
 完全なCRUD機能を使用するには、[CRUD対応Lambda](../reference/crud-lambda.md)の実装に置き換えてください。
+
+---
+
+> **💡 Docker環境での開発**: 依存関係の更新が必要な場合は `docker compose exec go-dev go mod tidy` を実行してください。

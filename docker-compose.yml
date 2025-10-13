@@ -1,4 +1,17 @@
 services:
+  # 開発環境用のGoコンテナ
+  go-dev:
+    image: golang:1.23-alpine
+    container_name: cdk-go-dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+    environment:
+      - CGO_ENABLED=0
+      - GOOS=linux
+    command: sh -c "apk add --no-cache git ca-certificates make zip && tail -f /dev/null"
+
   localstack:
     image: localstack/localstack:latest
     container_name: localstack
@@ -12,3 +25,6 @@ services:
       - LAMBDA_EXECUTOR=docker
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+
+volumes:
+  go-mod-cache:

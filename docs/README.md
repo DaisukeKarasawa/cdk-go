@@ -4,6 +4,8 @@
 
 > **注意**: アプリケーションの**使用方法**については、[ルートのREADME.md](../README.md)を参照してください。
 
+> **💡 Docker開発環境について**: このリポジトリには統一されたDocker開発環境（Go 1.23）が同梱されています。Getting StartedのGo導入は任意で、`make setup-dev`で統一環境を利用できます。
+
 ## 📚 ドキュメント構成
 
 ### 🚀 Getting Started（初期構築）

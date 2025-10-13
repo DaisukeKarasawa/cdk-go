@@ -13,7 +13,33 @@ Lambdaのビルド（Linux/amd64用bootstrap生成→ZIP化）と、cdklocalの 
 ```makefile
 SHELL := /bin/bash
 
-# Go Lambda をビルドしてZIP化（Linux/amd64でビルド、bootstrap実行形式）
+# 開発環境のセットアップ（Docker環境）
+setup-dev:
+	@echo "🚀 開発環境をセットアップしています..."
+	docker compose up -d go-dev
+	docker compose exec go-dev go mod download
+	@echo "✅ 開発環境のセットアップが完了しました"
+
+# Docker環境でのビルド
+build-docker:
+	@echo "🔨 Dockerコンテナ内でビルドしています..."
+	docker compose exec go-dev sh -c "mkdir -p dist/blog && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/blog/bootstrap ./lambda/cmd/blog && cd dist/blog && zip -j ../blog.zip bootstrap"
+	@echo "✅ ビルドが完了しました"
+
+# Docker環境でのテスト
+test-docker:
+	@echo "🧪 Dockerコンテナ内でテストを実行しています..."
+	docker compose exec go-dev go test ./...
+	@echo "✅ テストが完了しました"
+
+# 開発環境のクリーンアップ
+clean-dev:
+	@echo "🧹 開発環境をクリーンアップしています..."
+	docker compose down
+	docker volume rm cdk-go_go-mod-cache 2>/dev/null || true
+	@echo "✅ クリーンアップが完了しました"
+
+# Go Lambda をビルドしてZIP化（ローカルGo環境）
 build-lambda:
 	mkdir -p dist/blog
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/blog/bootstrap lambda/cmd/blog
@@ -37,9 +63,81 @@ logs:
 
 ## タスク詳細
 
+### setup-dev
+
+**目的**: 統一されたGo 1.23開発環境をセットアップ
+
+**処理内容**:
+
+1. `go-dev` コンテナを起動（golang:1.23-alpine）
+2. 必要なパッケージ（git, ca-certificates, make, zip）を自動インストール
+3. `go mod download` で依存関係をダウンロード
+
+**使用例**:
+
+```bash
+make setup-dev
+```
+
+**出力**:
+
+- `cdk-go-dev` コンテナが起動
+- Go 1.23環境で開発可能
+
+### build-docker
+
+**目的**: Docker環境でLambda関数をビルドしてZIP化
+
+**処理内容**:
+
+1. Dockerコンテナ内で `dist/blog/` ディレクトリを作成
+2. `CGO_ENABLED=0 GOOS=linux GOARCH=amd64` でクロスコンパイル
+3. 実行ファイル名を `bootstrap` に設定
+4. `dist/blog.zip` にZIP化
+
+**使用例**:
+
+```bash
+make build-docker
+```
+
+**出力**:
+
+- `dist/blog/bootstrap` - Linux用実行ファイル
+- `dist/blog.zip` - デプロイ用ZIPアーカイブ
+
+### test-docker
+
+**目的**: Docker環境でテストを実行
+
+**処理内容**:
+
+- Dockerコンテナ内で `go test ./...` を実行
+
+**使用例**:
+
+```bash
+make test-docker
+```
+
+### clean-dev
+
+**目的**: 開発環境をクリーンアップ
+
+**処理内容**:
+
+1. すべてのDockerコンテナを停止・削除
+2. `go-mod-cache` ボリュームを削除
+
+**使用例**:
+
+```bash
+make clean-dev
+```
+
 ### build-lambda
 
-**目的**: Lambda関数をLinux/amd64用にクロスコンパイルしてZIP化
+**目的**: ローカルGo環境でLambda関数をLinux/amd64用にクロスコンパイルしてZIP化
 
 **処理内容**:
 
@@ -58,6 +156,8 @@ make build-lambda
 
 - `dist/blog/bootstrap` - Linux用実行ファイル
 - `dist/blog.zip` - デプロイ用ZIPアーカイブ
+
+**注意**: ローカルにGo 1.23+が必要。Docker環境の場合は `make build-docker` を推奨。
 
 ### bootstrap
 
@@ -148,9 +248,24 @@ make logs
 
 ### 初回セットアップ
 
+**Docker環境（推奨）**:
+
+```bash
+# 1. 開発環境セットアップ
+make setup-dev
+
+# 2. Bootstrap（初回のみ）
+make bootstrap
+
+# 3. 初回デプロイ
+make deploy
+```
+
+**従来のローカル環境**:
+
 ```bash
 # 1. LocalStack 起動
-docker compose up -d
+docker compose up -d localstack
 
 # 2. Bootstrap（初回のみ）
 make bootstrap
@@ -160,6 +275,25 @@ make deploy
 ```
 
 ### 日常的な開発ループ
+
+**Docker環境（推奨）**:
+
+```bash
+# 1. コード変更
+# lambda/cmd/blog/main.go を編集
+
+# 2. デプロイ（Docker環境でビルドも自動実行）
+make build-docker
+make deploy
+
+# 3. ログ確認（別ターミナル）
+make logs
+
+# 4. API テスト
+curl -s "http://localhost:4566/restapis/${REST_API_ID}/prod/_user_request_/posts"
+```
+
+**従来のローカル環境**:
 
 ```bash
 # 1. コード変更

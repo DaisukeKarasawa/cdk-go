@@ -10,8 +10,10 @@ LocalStack + CDK（Go）でローカル完結の IaC/サーバーレス実行環
 
 ## 必要なツール
 
-- Docker & Docker Compose
-- Go (1.21+)
+- Docker & Docker Compose v2
+- Go（任意）
+  - Docker利用時は不要
+  - ローカルで使う場合は Go 1.23+（または Go 1.21+ + toolchain 有効）
 - Node.js (LTS)
 - AWS CLI v2
 - awslocal / cdklocal
@@ -31,12 +33,16 @@ https://www.docker.com/products/docker-desktop/ からインストール
 
 インストール後に Docker Desktop を起動しておく
 
-### 3. Go（1.21+ 推奨）
+### 3. Go（任意）
+
+**Docker利用時は不要**。ローカルでGoを使用する場合のみインストール：
 
 ```bash
 brew install go
-go version  # 例: go version go1.22.x darwin/arm64 or amd64
+go version  # 例: go version go1.23.x darwin/arm64 or amd64
 ```
+
+**注意**: Go 1.21+ でtoolchain機能を使用する場合、`go.mod`で`toolchain`ディレクティブが有効になります。
 
 ### 4. Node.js（CDK CLI 用 / LTS推奨）
 
@@ -125,6 +131,17 @@ EOF
 
 - LocalStack 用のラッパー `awslocal`/`cdklocal` を使うと `--endpoint-url` の指定が不要になり、設定漏れが減ります
 - 注意: `npx install -g aws-cdk-local` は無効。グローバル化は `npm install -g` を使用
+
+## 開発環境セットアップ（推奨）
+
+このリポジトリには統一されたDocker開発環境が含まれています：
+
+```bash
+# 統一されたGo 1.23環境をセットアップ
+make setup-dev
+```
+
+これにより、ローカルにGoをインストールせずに開発を開始できます。
 
 ## 次のステップ
 
