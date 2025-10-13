@@ -44,6 +44,9 @@ go version  # 例: go version go1.23.x darwin/arm64 or amd64
 
 **注意**: Go 1.21+ でtoolchain機能を使用する場合、`go.mod`で`toolchain`ディレクティブが有効になります。
 
+- 補足: `go.mod` の `go` は `1.23` のようにメジャー.マイナーのみ（`1.23.0` は無効）
+- 古いGoで `unknown directive: toolchain` が出る場合は Docker を使うか、`toolchain` 行を一時的に外してください。
+
 ### 4. Node.js（CDK CLI 用 / LTS推奨）
 
 ```bash

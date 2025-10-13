@@ -241,6 +241,54 @@ make destroy
 
 詳細は[Makefileタスク](../reference/makefile-tasks.md)を参照してください。
 
+## Go モジュール管理（go mod tidy / go get）
+
+Go の依存管理は `go.mod` に依存します。同じ目的でも Docker/非Docker の2通りを用意しています。
+
+- Docker環境（推奨）:
+
+```bash
+# 依存整理
+docker compose exec go-dev go mod tidy
+
+# 依存追加（例）
+docker compose exec go-dev go get github.com/aws/aws-lambda-go@latest
+```
+
+- ローカルGo（非Docker）:
+
+```bash
+# Goバージョンを確認（Go 1.23 以上を推奨）
+go version
+
+# 依存整理
+go mod tidy
+
+# 依存追加（例）
+go get github.com/aws/aws-lambda-go@latest
+```
+
+- 互換性のメモ:
+  - `go.mod` の `go` はメジャー.マイナーのみ（`1.23`）。`1.23.0` は無効です。
+  - `toolchain` ディレクティブは Go 1.21+ で利用可能。古いGoで `unknown directive: toolchain` が出る場合は、
+    1) Docker の `go-dev` 環境で実行する、または 2) 一時的に `toolchain` 行を外して実行してください。
+
+- `go.mod` 記述の例（2パターン）:
+
+  - 最新ツールチェインを明示:
+
+    ```
+    go 1.23
+    toolchain go1.23.12
+    ```
+
+  - 互換性優先（古いGoでも動かす）:
+
+    ```
+    go 1.23
+    # toolchain 行は一時的に外しても可
+    ```
+
 ## トラブル時の対処
 
 ### デプロイが失敗する

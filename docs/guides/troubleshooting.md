@@ -162,6 +162,40 @@ mkdir my-cdk-app && cd my-cdk-app && cdk init app --language go
 
 ### Go バージョン・toolchain関連
 
+#### 0. `invalid go version '1.23.0': must match format 1.23` エラー
+
+**症状**: `go mod tidy` や `go get` 実行時に、`invalid go version '1.23.0'` が出る。
+
+**原因**: `go.mod` の `go` 記法はメジャー.マイナーのみ。`1.23.0` のようなパッチ付きは無効。
+
+**解決策**:
+
+- `go.mod` を以下のいずれかに修正:
+
+  - 最新ツールチェインを明示:
+    ```
+    go 1.23
+    toolchain go1.23.12
+    ```
+
+  - 互換性優先（古いGoでも動かす）:
+    ```
+    go 1.23
+    # toolchain 行は一時的に外しても可
+    ```
+
+- 実行方法（2通り）:
+  - Docker 環境（推奨）:
+    ```bash
+    make setup-dev
+    docker compose exec go-dev go mod tidy
+    ```
+  - ローカル Go:
+    ```bash
+    go version  # Go 1.23+ を推奨
+    go mod tidy
+    ```
+
 #### 1. `unknown directive toolchain` エラー
 
 **症状**: `go.mod` で `toolchain go1.23.12` が認識されない
