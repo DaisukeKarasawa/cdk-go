@@ -390,19 +390,18 @@ func isNotFoundError(err error) bool {
 package service
 
 import (
-	"context"
-	"fmt"
-	"strconv"
-	"strings"
+    "context"
+    "fmt"
+    "strconv"
+    "strings"
 
-	"lambda/internal/model"
-	"lambda/internal/repository"
-	"lambda/pkg/logger"
+    "lambda/internal/model"
+    "lambda/pkg/logger"
 )
 
 // BlogService ブログサービスのビジネスロジック
 type BlogService struct {
-	repo repository.BlogRepository
+    repo BlogRepository
 }
 
 // BlogRepository リポジトリのインターフェース
